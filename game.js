@@ -90,17 +90,13 @@ playGame.prototype = {
 
         this.spacebarKey = game.input.keyboard.addKey(SPACEBAR);
         this.swipe = new Swipe(game);
+        this.swipe.diagonalDisabled = true;
         const v = 32;
         this.directions = Object();
-        this.directions[LEFT]  = {dx: -v, dy:  0, angle: 180,  rot:-90};
-        this.directions[UP]    = {dx:  0, dy: -v, angle: -90,  rot: 0};
-        this.directions[RIGHT] = {dx: +v, dy:  0, angle:   0,  rot: 90};
-        this.directions[DOWN]  = {dx:  0, dy: +v, angle:  90,  rot:180};
-        this.directions[SPACEBAR]  = {dx:  0, dy: 0};
-        this.directions[this.swipe.DIRECTION_DOWN] = this.directions[DOWN];
-        this.directions[this.swipe.DIRECTION_UP] = this.directions[UP];
-        this.directions[this.swipe.DIRECTION_LEFT] = this.directions[LEFT];
-        this.directions[this.swipe.DIRECTION_RIGHT] = this.directions[RIGHT];
+        this.directions[this.swipe.DIRECTION_DOWN] = {dx:  0, dy: +v, angle:  90,  rot:180};
+        this.directions[this.swipe.DIRECTION_UP] = {dx:  0, dy: -v, angle: -90,  rot: 0};
+        this.directions[this.swipe.DIRECTION_LEFT] = {dx: -v, dy:  0, angle: 180,  rot:-90};
+        this.directions[this.swipe.DIRECTION_RIGHT] = {dx: +v, dy:  0, angle:   0,  rot: 90};
         this.tank.direction = this.swipe.DIRECTION_UP;
         this.tank.speed = v;
 
@@ -108,29 +104,25 @@ playGame.prototype = {
     },
     update: function () {
         let t = this.tank;
-        let d = this.swipe.check();
-        const newDirection = (d != null)? d.direction : null;
-
+        let swipe = this.swipe.check();
+        const newDirection = (swipe != null)? swipe.direction : null;
         if (this.spacebarKey.isDown) {
             t.gear = 0;
             t.body.velocity.x = 0;
             t.body.velocity.y = 0;
-        } else if (newDirection != null) {
+        } else if (newDirection in this.directions) {
             if (t.direction != newDirection) {
                 t.gear = 1;
-                t.body.angle = this.directions[newDirection].angle;
-                t.body.rotation = this.directions[newDirection].angle + 90;
                 t.direction = newDirection;
             } else {
                 t.gear++;
             }
-            let d = this.directions[t.direction];
-            t.body.velocity.x = t.gear * d.dx;
-            t.body.velocity.y = t.gear * d.dy;
+            const dir = this.directions[t.direction];
+            t.body.velocity.x = t.gear * dir.dx;
+            t.body.velocity.y = t.gear * dir.dy;
+            t.body.angle = dir.angle;
+            t.body.rotation = dir.angle + 90;
         }
-        // const newX = t.x + t.gear * this.directions[t.direction].dx;
-        // const newY = t.y + t.gear * this.directions[t.direction].dy;
-        // game.physics.arcade.moveToXY(t, newX, newY, t.speed * t.gear);
         game.physics.arcade.collide(this.tank, this.wallsLayer);
         game.physics.arcade.overlap(this.tank, this.skullsGroup, explode, null, this);
     },
