@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.1.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32" infinite="0" backgroundcolor="#328200" nextobjectid="1">
+<map version="1.0" tiledversion="1.1.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="32" tileheight="32" infinite="0" backgroundcolor="#328200" nextobjectid="6">
  <tileset firstgid="1" name="metal_tileset" tilewidth="32" tileheight="32" tilecount="21" columns="7">
   <image source="metal_tileset.png" width="224" height="96"/>
  </tileset>
- <layer name="walls" width="32" height="32">
+ <tileset firstgid="22" name="skull_tileset" tilewidth="32" tileheight="32" tilecount="1" columns="1">
+  <image source="skull.png" width="32" height="32"/>
+ </tileset>
+ <layer name="walls" width="32" height="32" locked="1" opacity="0.78">
   <data encoding="csv">
 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
 15,0,0,0,0,0,0,0,0,0,0,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,
@@ -39,4 +42,8 @@
 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15
 </data>
  </layer>
+ <objectgroup color="#c86464" name="skulls">
+  <object id="4" gid="22" x="512" y="127" width="32" height="32"/>
+  <object id="5" gid="22" x="511.667" y="928.333" width="32" height="32"/>
+ </objectgroup>
 </map>

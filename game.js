@@ -10,6 +10,7 @@ var gameOptions = {
 var game;
 const MAP_ID = "game-map";
 const TANK_ID = "tank";
+const SKULL_ID = "skull";
 const TILES_ID = "tiles";
 const LAYER_ID = "walls";
 const LEFT = Phaser.Keyboard.LEFT;
@@ -41,6 +42,7 @@ preloadGame.prototype = {
             Phaser.Tilemap.TILED_JSON);
         game.load.image(TILES_ID, "assets/metal_tileset.png");
         game.load.image(TANK_ID, "assets/tank32x32.png");
+        game.load.image(SKULL_ID, "assets/skull.png");
     },
     create: function () {
         game.state.start("PlayGame");
@@ -51,7 +53,6 @@ var playGame = function (game) {}
 
 playGame.prototype = {
     create: function () {
-        this.swipe = new Swipe(game);
 
         // starting ARCADE physics
         game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -60,92 +61,59 @@ playGame.prototype = {
         this.map = game.add.tilemap(MAP_ID);
         this.map.addTilesetImage("metal_tileset", TILES_ID);
 
-        // tile 1 (the black tile) has the collision enabled
-        this.map.setCollision(1);
-
         this.wallsLayer = this.map.createLayer(LAYER_ID);
         this.map.setCollisionBetween(1, 100, true, LAYER_ID);
         this.wallsLayer.resizeWorld();
 
+        this.skullsGroup = game.add.group();
+        this.skullsGroup.enableBody = true;
+        this.map.createFromObjects('skulls', 22, SKULL_ID,
+          0, true, false, this.skullsGroup);
+
         // adding the hero sprite
         this.tank = game.add.sprite(
-            game.width / 2 - gameOptions.playerSize,
+            game.width/2 - gameOptions.playerSize,
             game.height/2,
             TANK_ID);
         this.tank.anchor.set(0.5, 0.5); // setting hero anchor point
+        this.skull = game.add.sprite()
 
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
 
-        // setting tank gravity
-        this.tank.body.gravity.y = 0; // gameOptions.playerGravity;
-        this.tank.body.gravity.x = 0; // gameOptions.playerGravity;
+        this.tank.body.gravity.y = 0;
+        this.tank.body.gravity.x = 0;
 
-        // setting hero horizontal speed
-        this.tank.body.velocity.x = 0; // gameOptions.playerSpeed;
-        this.tank.body.velocity.y = 0; // gameOptions.playerSpeed;
+        this.tank.body.velocity.x = 0;
+        this.tank.body.velocity.y = 0;
         this.tank.body.collideWorldBounds = true;
         this.tank.gear = 0;
 
-        // the hero can jump
-        this.canJump = false;
-
-        // the hero is not on the wall
-        this.onWall = false;
-
         this.spacebarKey = game.input.keyboard.addKey(SPACEBAR);
-        game.input.keyboard.addKeyCapture([LEFT, RIGHT, UP, DOWN, SPACEBAR]);
-
-        this.cursors = game.input.keyboard.createCursorKeys();
-        for (let k in this.cursors) {
-            this.cursors[k].wasPressed = false;
-        }
-
-        const v = 1;
+        this.swipe = new Swipe(game);
+        const v = 64;
         this.directions = Object();
         this.directions[LEFT]  = {dx: -v, dy:  0, angle: 180,  rot:-90};
         this.directions[UP]    = {dx:  0, dy: -v, angle: -90,  rot: 0};
         this.directions[RIGHT] = {dx: +v, dy:  0, angle:   0,  rot: 90};
         this.directions[DOWN]  = {dx:  0, dy: +v, angle:  90,  rot:180};
         this.directions[SPACEBAR]  = {dx:  0, dy: 0};
-        this.tank.direction = UP;
+        this.directions[this.swipe.DIRECTION_DOWN] = this.directions[DOWN];
+        this.directions[this.swipe.DIRECTION_UP] = this.directions[UP];
+        this.directions[this.swipe.DIRECTION_LEFT] = this.directions[LEFT];
+        this.directions[this.swipe.DIRECTION_RIGHT] = this.directions[RIGHT];
+        this.tank.direction = this.swipe.DIRECTION_UP;
+        this.tank.speed = v;
     },
     update: function () {
         let t = this.tank;
-        let newDirection = null;
-        let cursors = this.cursors;
-        let swipeDir = this.swipe.check();
-        swipeDir = (swipeDir != null)? swipeDir.direction : null;
-
-        if (cursors.up.isDown) {
-            cursors.up.wasPressed = true;
-        } else if (cursors.up.wasPressed || swipeDir == this.swipe.DIRECTION_UP) {
-            cursors.up.wasPressed = false;
-            newDirection = Phaser.Keyboard.UP;
-        }
-        if (cursors.down.isDown || swipeDir == this.swipe.DIRECTION_DOWN) {
-            cursors.down.wasPressed = true;
-        } else if (cursors.down.wasPressed) {
-            cursors.down.wasPressed = false;
-            newDirection = Phaser.Keyboard.DOWN;
-        }
-        if (cursors.left.isDown) {
-            cursors.left.wasPressed = true;
-        } else if (cursors.left.wasPressed || swipeDir == this.swipe.DIRECTION_LEFT) {
-            cursors.left.wasPressed = false;
-            newDirection = Phaser.Keyboard.LEFT;
-        }
-        if (cursors.right.isDown) {
-            cursors.right.wasPressed = true;
-        } else if (cursors.right.wasPressed || swipeDir == this.swipe.DIRECTION_RIGHT) {
-            cursors.right.wasPressed = false;
-            newDirection = Phaser.Keyboard.RIGHT;
-        }
+        let d = this.swipe.check();
+        const newDirection = (d != null)? d.direction : null;
         if (this.spacebarKey.isDown) {
             t.gear = 0;
         }
         if (newDirection != null) {
             if (t.direction != newDirection) {
-                t.gear = 1;
+                t.gear = 0;
                 t.body.angle = this.directions[newDirection].angle;
                 t.body.rotation = this.directions[newDirection].angle + 90;
                 t.direction = newDirection;
@@ -153,15 +121,9 @@ playGame.prototype = {
                 t.gear++;
             }
         }
-
-        let newX = t.x + t.gear * this.directions[t.direction].dx;
-        let newY = t.y + t.gear * this.directions[t.direction].dy;
-        game.physics.arcade.moveToXY(t, newX, newY, 32 * t.gear);
-
-        // game.physics.arcade.velocityFromRotation(
-        //     t.body.rotation, 50, t.body.velocity);
-        // t.x += t.gear * this.directions[t.direction].dx;
-        // t.y += t.gear * this.directions[t.direction].dy;
+        const newX = t.x + t.gear * this.directions[t.direction].dx;
+        const newY = t.y + t.gear * this.directions[t.direction].dy;
+        game.physics.arcade.moveToXY(t, newX, newY, t.speed * t.gear);
         game.physics.arcade.collide(t, this.wallsLayer);
     },
     render: function() {
