@@ -13,11 +13,7 @@ const TANK_ID = "tank";
 const SKULL_ID = "skull";
 const TILES_ID = "tiles";
 const LAYER_ID = "walls";
-const LEFT = Phaser.Keyboard.LEFT;
-const UP = Phaser.Keyboard.UP;
-const RIGHT = Phaser.Keyboard.RIGHT;
-const DOWN = Phaser.Keyboard.DOWN;
-const SPACEBAR = Phaser.Keyboard.SPACEBAR;
+const EXPLOSION_ID = "explosion";
 
 
 window.onload = function () {
@@ -43,6 +39,7 @@ preloadGame.prototype = {
         game.load.image(TILES_ID, "assets/metal_tileset.png");
         game.load.image(TANK_ID, "assets/tank32x32.png");
         game.load.image(SKULL_ID, "assets/skull.png");
+        game.load.spritesheet(EXPLOSION_ID, 'assets/explosion.png', 30, 30);
     },
     create: function () {
         game.state.start("PlayGame");
@@ -88,7 +85,7 @@ playGame.prototype = {
         this.tank.body.collideWorldBounds = true;
         this.tank.gear = 0;
 
-        this.spacebarKey = game.input.keyboard.addKey(SPACEBAR);
+        this.spacebarKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         this.swipe = new Swipe(game);
         this.swipe.diagonalDisabled = true;
         const v = 32;
@@ -101,6 +98,11 @@ playGame.prototype = {
         this.tank.speed = v;
 
         game.camera.follow(this.tank);
+
+        this.expl = game.add.sprite(80, 80, EXPLOSION_ID);
+        this.expl.anchor.set(0.5, 0.5);
+        this.expl.visible = false;
+        this.expl.animations.add("explode", null, 30, false);
     },
     update: function () {
         let t = this.tank;
@@ -124,14 +126,19 @@ playGame.prototype = {
             t.body.rotation = dir.angle + 90;
         }
         game.physics.arcade.collide(this.tank, this.wallsLayer);
+        explode = function(tank, skull) {
+            skull.kill();
+            tank.kill();
+            expl = game.add.sprite(80, 80, EXPLOSION_ID);
+            expl.anchor.set(0.5, 0.5);
+            expl.animations.add("explode", null, 30, false);
+            expl.x = tank.x;
+            expl.y = tank.y;
+            expl.animations.play("explode", 15, false, true);
+        }
         game.physics.arcade.overlap(this.tank, this.skullsGroup, explode, null, this);
     },
     render: function() {
-        game.debug.cameraInfo(game.camera, 32, 128);
         game.debug.spriteInfo(this.tank, 32, 32);
     },
-}
-
-function explode(tank, skull) {
-    skull.kill();
 }
