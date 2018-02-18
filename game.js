@@ -51,6 +51,8 @@ var playGame = function (game) {}
 
 playGame.prototype = {
     create: function () {
+        this.swipe = new Swipe(game);
+
         // starting ARCADE physics
         game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -111,13 +113,16 @@ playGame.prototype = {
         let t = this.tank;
         let newDirection = null;
         let cursors = this.cursors;
+        let swipeDir = this.swipe.check();
+        swipeDir = (swipeDir != null)? swipeDir.direction : null;
+
         if (cursors.up.isDown) {
             cursors.up.wasPressed = true;
-        } else if (cursors.up.wasPressed) {
+        } else if (cursors.up.wasPressed || swipeDir == this.swipe.DIRECTION_UP) {
             cursors.up.wasPressed = false;
             newDirection = Phaser.Keyboard.UP;
         }
-        if (cursors.down.isDown) {
+        if (cursors.down.isDown || swipeDir == this.swipe.DIRECTION_DOWN) {
             cursors.down.wasPressed = true;
         } else if (cursors.down.wasPressed) {
             cursors.down.wasPressed = false;
@@ -125,13 +130,13 @@ playGame.prototype = {
         }
         if (cursors.left.isDown) {
             cursors.left.wasPressed = true;
-        } else if (cursors.left.wasPressed) {
+        } else if (cursors.left.wasPressed || swipeDir == this.swipe.DIRECTION_LEFT) {
             cursors.left.wasPressed = false;
             newDirection = Phaser.Keyboard.LEFT;
         }
         if (cursors.right.isDown) {
             cursors.right.wasPressed = true;
-        } else if (cursors.right.wasPressed) {
+        } else if (cursors.right.wasPressed || swipeDir == this.swipe.DIRECTION_RIGHT) {
             cursors.right.wasPressed = false;
             newDirection = Phaser.Keyboard.RIGHT;
         }
@@ -151,7 +156,7 @@ playGame.prototype = {
 
         let newX = t.x + t.gear * this.directions[t.direction].dx;
         let newY = t.y + t.gear * this.directions[t.direction].dy;
-        game.physics.arcade.moveToXY(t, newX, newY, 20 * t.gear);
+        game.physics.arcade.moveToXY(t, newX, newY, 32 * t.gear);
 
         // game.physics.arcade.velocityFromRotation(
         //     t.body.rotation, 50, t.body.velocity);
