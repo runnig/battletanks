@@ -1,17 +1,17 @@
 var gameOptions = {
-    gameWidth: 20 * 32, // 640,     // width of the game, in pixels
-    gameHeight: 20 * 32, // 480,    // height of the game, in pixels
-    bgColor: 0x444444,  // background color
+    playerSize: 32,
+    gameWidth: 32 * 32,  // in pixels
+    gameHeight: 32 * 32, // in pixels
+    bgColor: 0x447744,   // background color - green
     // playerGravity: 900, // player gravity
-    playerSpeed: 32,   // player horizontal speed
-    playerJump: 400,     // player force
-    defaultVelocity: 1,
+    playerSpeed: 32,     // player horizontal speed
 }
 
 var game;
 const MAP_ID = "game-map";
 const TANK_ID = "tank";
 const TILES_ID = "tiles";
+const LAYER_ID = "walls";
 const LEFT = Phaser.Keyboard.LEFT;
 const UP = Phaser.Keyboard.UP;
 const RIGHT = Phaser.Keyboard.RIGHT;
@@ -37,9 +37,9 @@ preloadGame.prototype = {
         game.stage.disableVisibilityChange = true;
 
         // loading level tilemap
-        game.load.tilemap(MAP_ID, "assets/map20x20.json", null,
+        game.load.tilemap(MAP_ID, "assets/level01.json", null,
             Phaser.Tilemap.TILED_JSON);
-        game.load.image(TILES_ID, "assets/terrain.png");
+        game.load.image(TILES_ID, "assets/metal_tileset.png");
         game.load.image(TANK_ID, "assets/tank32x32.png");
     },
     create: function () {
@@ -56,22 +56,21 @@ playGame.prototype = {
 
         // creatin of "level" tilemap
         this.map = game.add.tilemap(MAP_ID);
-
-        // adding tiles (actually one tile) to tilemap
-        this.map.addTilesetImage("Terrain", TILES_ID);
+        this.map.addTilesetImage("metal_tileset", TILES_ID);
 
         // tile 1 (the black tile) has the collision enabled
         this.map.setCollision(1);
 
-        // which layer should we render? That's right, "layer01"
-        this.layer = this.map.createLayer("layer01");
-        this.layer.resizeWorld();
+        this.wallsLayer = this.map.createLayer(LAYER_ID);
+        this.map.setCollisionBetween(1, 100, true, LAYER_ID);
+        this.wallsLayer.resizeWorld();
 
         // adding the hero sprite
-        this.tank = game.add.sprite(game.width / 2, game.height/2, TANK_ID);
-
-        // setting hero anchor point
-        this.tank.anchor.set(0.5, 0.5);
+        this.tank = game.add.sprite(
+            game.width / 2 - gameOptions.playerSize,
+            game.height/2,
+            TANK_ID);
+        this.tank.anchor.set(0.5, 0.5); // setting hero anchor point
 
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
 
@@ -91,10 +90,6 @@ playGame.prototype = {
         // the hero is not on the wall
         this.onWall = false;
 
-        this.upKey = game.input.keyboard.addKey(UP);
-        this.downKey = game.input.keyboard.addKey(DOWN);
-        this.leftKey = game.input.keyboard.addKey(LEFT);
-        this.rightKey = game.input.keyboard.addKey(RIGHT);
         this.spacebarKey = game.input.keyboard.addKey(SPACEBAR);
         game.input.keyboard.addKeyCapture([LEFT, RIGHT, UP, DOWN, SPACEBAR]);
 
@@ -153,8 +148,16 @@ playGame.prototype = {
                 t.gear++;
             }
         }
-        t.x += t.gear * this.directions[t.direction].dx;
-        t.y += t.gear * this.directions[t.direction].dy;
+
+        let newX = t.x + t.gear * this.directions[t.direction].dx;
+        let newY = t.y + t.gear * this.directions[t.direction].dy;
+        game.physics.arcade.moveToXY(t, newX, newY, 20 * t.gear);
+
+        // game.physics.arcade.velocityFromRotation(
+        //     t.body.rotation, 50, t.body.velocity);
+        // t.x += t.gear * this.directions[t.direction].dx;
+        // t.y += t.gear * this.directions[t.direction].dy;
+        game.physics.arcade.collide(t, this.wallsLayer);
     },
     render: function() {
         game.debug.spriteInfo(this.tank, 32, 32);
