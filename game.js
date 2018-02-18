@@ -1,7 +1,7 @@
 var gameOptions = {
     playerSize: 32,
-    gameWidth: 32 * 32,  // in pixels
-    gameHeight: 32 * 32, // in pixels
+    gameWidth: 32 * 15,  // in pixels
+    gameHeight: 32 * 15, // in pixels
     bgColor: 0x447744,   // background color - green
     // playerGravity: 900, // player gravity
     playerSpeed: 32,     // player horizontal speed
@@ -90,7 +90,7 @@ playGame.prototype = {
 
         this.spacebarKey = game.input.keyboard.addKey(SPACEBAR);
         this.swipe = new Swipe(game);
-        const v = 64;
+        const v = 32;
         this.directions = Object();
         this.directions[LEFT]  = {dx: -v, dy:  0, angle: 180,  rot:-90};
         this.directions[UP]    = {dx:  0, dy: -v, angle: -90,  rot: 0};
@@ -103,31 +103,39 @@ playGame.prototype = {
         this.directions[this.swipe.DIRECTION_RIGHT] = this.directions[RIGHT];
         this.tank.direction = this.swipe.DIRECTION_UP;
         this.tank.speed = v;
+
+        game.camera.follow(this.tank);
     },
     update: function () {
         let t = this.tank;
         let d = this.swipe.check();
         const newDirection = (d != null)? d.direction : null;
+
         if (this.spacebarKey.isDown) {
             t.gear = 0;
-        }
-        if (newDirection != null) {
+            t.body.velocity.x = 0;
+            t.body.velocity.y = 0;
+        } else if (newDirection != null) {
             if (t.direction != newDirection) {
-                t.gear = 0;
+                t.gear = 1;
                 t.body.angle = this.directions[newDirection].angle;
                 t.body.rotation = this.directions[newDirection].angle + 90;
                 t.direction = newDirection;
             } else {
                 t.gear++;
             }
+            let d = this.directions[t.direction];
+            t.body.velocity.x = t.gear * d.dx;
+            t.body.velocity.y = t.gear * d.dy;
         }
-        const newX = t.x + t.gear * this.directions[t.direction].dx;
-        const newY = t.y + t.gear * this.directions[t.direction].dy;
-        game.physics.arcade.moveToXY(t, newX, newY, t.speed * t.gear);
-        game.physics.arcade.collide(t, this.wallsLayer);
-        game.physics.arcade.overlap(t, this.skullsGroup, explode, null, this);
+        // const newX = t.x + t.gear * this.directions[t.direction].dx;
+        // const newY = t.y + t.gear * this.directions[t.direction].dy;
+        // game.physics.arcade.moveToXY(t, newX, newY, t.speed * t.gear);
+        game.physics.arcade.collide(this.tank, this.wallsLayer);
+        game.physics.arcade.overlap(this.tank, this.skullsGroup, explode, null, this);
     },
     render: function() {
+        game.debug.cameraInfo(game.camera, 32, 128);
         game.debug.spriteInfo(this.tank, 32, 32);
     },
 }

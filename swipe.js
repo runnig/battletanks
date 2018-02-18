@@ -23,8 +23,8 @@ function Swipe(game, model) {
 
   self.game = game;
   self.model = model !== undefined ? model : null;
-  self.dragLength = 100;
-  self.diagonalDelta = 50;
+  self.dragLength = 30;
+  self.diagonalDelta = 15;
   self.swiping = false;
   self.direction = null;
   self.tmpDirection = null;
@@ -154,27 +154,28 @@ Swipe.prototype.keyUp = function() {
 
 Swipe.prototype.check = function () {
   if (this.direction !== null) {
-    var result = {x: 0, y: 0, direction: this.direction};
+    const result = {x: 0, y: 0, direction: this.direction};
     this.direction = null;
     return result;
   }
   if (!this.swiping) return null;
 
-  if (Phaser.Point.distance(this.game.input.activePointer.position, this.game.input.activePointer.positionDown) < this.dragLength) return null;
+  const activePointer = this.game.input.activePointer;
+  if (Phaser.Point.distance(activePointer.position, activePointer.positionDown) < this.dragLength) return null;
 
   this.swiping = false;
 
   var direction = null;
-  var deltaX = this.game.input.activePointer.position.x - this.game.input.activePointer.positionDown.x;
-  var deltaY = this.game.input.activePointer.position.y - this.game.input.activePointer.positionDown.y;
+  var deltaX = activePointer.position.x - activePointer.positionDown.x;
+  var deltaY = activePointer.position.y - activePointer.positionDown.y;
 
   var result = {
-    x: this.game.input.activePointer.positionDown.x,
-    y: this.game.input.activePointer.positionDown.y
+    x: activePointer.positionDown.x,
+    y: activePointer.positionDown.y
   };
 
-  var deltaXabs = Math.abs(deltaX);
-  var deltaYabs = Math.abs(deltaY);
+  const deltaXabs = Math.abs(deltaX);
+  const deltaYabs = Math.abs(deltaY);
 
   if (!this.diagonalDisabled && deltaXabs > (this.dragLength-this.diagonalDelta) && deltaYabs > (this.dragLength-this.diagonalDelta)) {
     if (deltaX > 0 && deltaY > 0) {
