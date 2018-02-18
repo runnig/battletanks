@@ -1,9 +1,8 @@
 var gameOptions = {
     playerSize: 32,
-    gameWidth: 32 * 15,  // in pixels
-    gameHeight: 32 * 15, // in pixels
+    gameWidth: 32 * 10,  // in pixels
+    gameHeight: 32 * 10, // in pixels
     bgColor: 0x447744,   // background color - green
-    // playerGravity: 900, // player gravity
     playerSpeed: 32,     // player horizontal speed
 }
 
@@ -48,13 +47,21 @@ preloadGame.prototype = {
 
 var playGame = function (game) {}
 
+explode = function(tank, skull) {
+    skull.kill();
+    tank.kill();
+    expl = game.add.sprite(80, 80, EXPLOSION_ID);
+    expl.anchor.set(0.5, 0.5);
+    expl.animations.add("explode", null, 30, false);
+    expl.x = tank.x;
+    expl.y = tank.y;
+    expl.animations.play("explode", 15, false, true);
+}
+
 playGame.prototype = {
     create: function () {
-
-        // starting ARCADE physics
         game.physics.startSystem(Phaser.Physics.ARCADE);
 
-        // creatin of "level" tilemap
         this.map = game.add.tilemap(MAP_ID);
         this.map.addTilesetImage("metal_tileset", TILES_ID);
 
@@ -67,18 +74,15 @@ playGame.prototype = {
         this.map.createFromObjects("skulls", 22, SKULL_ID,
           0, true, false, this.skullsGroup);
 
-        // adding the hero sprite
         this.tank = game.add.sprite(
-            game.width/2-gameOptions.playerSize,
-            game.height/2,
-            TANK_ID);
+            game.width/2-gameOptions.playerSize, game.height/2, TANK_ID);
         this.tank.anchor.set(0.5, 0.5); // setting hero anchor point
-        this.skull = game.add.sprite()
+        this.skull = game.add.sprite();
 
         game.physics.enable(this.tank, Phaser.Physics.ARCADE);
 
-        this.tank.body.gravity.y = 0;
         this.tank.body.gravity.x = 0;
+        this.tank.body.gravity.y = 0;
 
         this.tank.body.velocity.x = 0;
         this.tank.body.velocity.y = 0;
@@ -90,19 +94,13 @@ playGame.prototype = {
         this.swipe.diagonalDisabled = true;
         const v = 32;
         this.directions = Object();
-        this.directions[this.swipe.DIRECTION_DOWN] = {dx:  0, dy: +v, angle:  90,  rot:180};
-        this.directions[this.swipe.DIRECTION_UP] = {dx:  0, dy: -v, angle: -90,  rot: 0};
-        this.directions[this.swipe.DIRECTION_LEFT] = {dx: -v, dy:  0, angle: 180,  rot:-90};
-        this.directions[this.swipe.DIRECTION_RIGHT] = {dx: +v, dy:  0, angle:   0,  rot: 90};
+        this.directions[this.swipe.DIRECTION_DOWN]  = {dx:  0, dy: +v, angle:  90};
+        this.directions[this.swipe.DIRECTION_UP]    = {dx:  0, dy: -v, angle: -90};
+        this.directions[this.swipe.DIRECTION_LEFT]  = {dx: -v, dy:  0, angle: 180};
+        this.directions[this.swipe.DIRECTION_RIGHT] = {dx: +v, dy:  0, angle:   0};
         this.tank.direction = this.swipe.DIRECTION_UP;
-        this.tank.speed = v;
 
         game.camera.follow(this.tank);
-
-        this.expl = game.add.sprite(80, 80, EXPLOSION_ID);
-        this.expl.anchor.set(0.5, 0.5);
-        this.expl.visible = false;
-        this.expl.animations.add("explode", null, 30, false);
     },
     update: function () {
         let t = this.tank;
@@ -126,16 +124,6 @@ playGame.prototype = {
             t.body.rotation = dir.angle + 90;
         }
         game.physics.arcade.collide(this.tank, this.wallsLayer);
-        explode = function(tank, skull) {
-            skull.kill();
-            tank.kill();
-            expl = game.add.sprite(80, 80, EXPLOSION_ID);
-            expl.anchor.set(0.5, 0.5);
-            expl.animations.add("explode", null, 30, false);
-            expl.x = tank.x;
-            expl.y = tank.y;
-            expl.animations.play("explode", 15, false, true);
-        }
         game.physics.arcade.overlap(this.tank, this.skullsGroup, explode, null, this);
     },
     render: function() {
