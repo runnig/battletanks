@@ -67,12 +67,12 @@ playGame.prototype = {
 
         this.skullsGroup = game.add.group();
         this.skullsGroup.enableBody = true;
-        this.map.createFromObjects('skulls', 22, SKULL_ID,
+        this.map.createFromObjects("skulls", 22, SKULL_ID,
           0, true, false, this.skullsGroup);
 
         // adding the hero sprite
         this.tank = game.add.sprite(
-            game.width/2 - gameOptions.playerSize,
+            game.width/2-gameOptions.playerSize,
             game.height/2,
             TANK_ID);
         this.tank.anchor.set(0.5, 0.5); // setting hero anchor point
@@ -125,8 +125,13 @@ playGame.prototype = {
         const newY = t.y + t.gear * this.directions[t.direction].dy;
         game.physics.arcade.moveToXY(t, newX, newY, t.speed * t.gear);
         game.physics.arcade.collide(t, this.wallsLayer);
+        game.physics.arcade.overlap(t, this.skullsGroup, explode, null, this);
     },
     render: function() {
         game.debug.spriteInfo(this.tank, 32, 32);
     },
+}
+
+function explode(tank, skull) {
+    skull.kill();
 }
